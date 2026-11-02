@@ -84,9 +84,9 @@ impl Default for Config {
             caravan_round_ms: U64(180_000),
             hat_stall_share_bps: 7_000,
             stall_sale_fee_bps: 500,
-            player_funding: U128(250_000_000_000_000_000_000_000),      // 0.25 NEAR
-            stall_funding: U128(400_000_000_000_000_000_000_000),       // 0.4 NEAR
-            stall_house_allowance: U128(300_000_000_000_000_000_000_000), // 0.3 NEAR of gas
+            player_funding: U128(100_000_000_000_000_000_000_000), // 0.1 NEAR of gas
+            stall_funding: U128(300_000_000_000_000_000_000_000),  // 0.3 NEAR
+            stall_house_allowance: U128(0),                        // no separate cap
             tusdc_storage: U128(1_250_000_000_000_000_000_000),         // 0.00125 NEAR
             max_trade_units: 30,
         }

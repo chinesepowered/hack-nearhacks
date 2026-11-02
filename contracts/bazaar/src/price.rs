@@ -1,7 +1,7 @@
 //! Stall price curve. Mirrored exactly in `packages/core/src/price.ts`; keep them in sync
 //! (the `price_vectors` test and the TS test use the same vectors).
 //!
-//! mid(stock) = base * sqrt((target + 1) / (stock + 1)), clamped to [base/4, base*4]
+//! mid(stock) = base * sqrt((target + 1) / (stock + 1)), clamped to [base/2, base*2.5]
 //! ask = ceil(mid * (1 + spread)), bid = floor(mid * (1 - spread)), both at least 1 coin.
 //!
 //! A player selling n units gets bid() evaluated at the stock *after* each unit lands; a player
@@ -24,10 +24,10 @@ pub fn isqrt(n: u128) -> u128 {
     x
 }
 
-/// sqrt((target + 1) / (stock + 1)) scaled by 1e6, clamped to [0.25, 4.0].
+/// sqrt((target + 1) / (stock + 1)) scaled by 1e6, clamped to [0.5, 2.5].
 pub fn ratio(target: u32, stock: u128) -> u128 {
     let num = (target as u128 + 1) * SCALE * SCALE;
-    isqrt(num / (stock + 1)).clamp(SCALE / 4, SCALE * 4)
+    isqrt(num / (stock + 1)).clamp(SCALE / 2, SCALE * 5 / 2)
 }
 
 pub fn ask_unit(q: &Quote, stock: u128) -> u64 {
@@ -75,8 +75,8 @@ mod tests {
         assert_eq!(ratio(20, 20), 1_000_000);
         assert_eq!(ask_unit(&quote, 20), 6);
         assert_eq!(bid_unit(&quote, 20), 4);
-        assert_eq!(ask_unit(&quote, 0), 22); // empty shelf: 4x clamp
-        assert_eq!(bid_unit(&quote, 200), 1); // flooded: floor of 1 coin
+        assert_eq!(ask_unit(&quote, 0), 14); // empty shelf: 2.5x clamp
+        assert_eq!(bid_unit(&quote, 200), 2); // flooded: 0.5x clamp
         assert_eq!(sell_total(&quote, 20, 3), 12);
         assert_eq!(buy_total(&quote, 20, 3), 18);
     }

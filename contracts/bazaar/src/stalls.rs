@@ -110,8 +110,9 @@ impl Bazaar {
             )
             .add_access_key_allowance(
                 self.house_key.clone(),
+                // 0 = no separate cap: gas comes from the stall account's own small NEAR balance.
                 Allowance::limited(NearToken::from_yoctonear(self.config.stall_house_allowance.0))
-                    .unwrap(),
+                    .unwrap_or(Allowance::unlimited()),
                 stall_id.clone(),
                 KEEPER_METHODS,
             )

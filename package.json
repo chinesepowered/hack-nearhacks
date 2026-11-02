@@ -1,0 +1,33 @@
+{
+  "name": "capybazaar",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build:contracts": "bash contracts/build.sh",
+    "setup": "tsx packages/scripts/src/setup.ts",
+    "server": "tsx packages/scripts/src/server.ts",
+    "keeper": "tsx packages/scripts/src/keeper.ts",
+    "bots": "tsx packages/scripts/src/bots.ts",
+    "sim": "tsx packages/scripts/src/sim.ts",
+    "demo": "tsx packages/scripts/src/demo.ts",
+    "web": "pnpm --filter @capy/web dev",
+    "dev": "concurrently -k -n server,keeper,bots,web -c yellow,cyan,magenta,green \"pnpm server\" \"pnpm keeper\" \"pnpm bots\" \"pnpm web\"",
+    "test": "pnpm --filter @capy/core test && cargo test --manifest-path contracts/Cargo.toml",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "concurrently": "10.0.6",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}
