@@ -1,0 +1,19 @@
+# secrets and local state (never commit)
+.env
+.env.*
+!.env.example
+.keys/
+*.key.json
+deployment.local.json
+
+# build output
+node_modules/
+dist/
+contracts/target/
+*.tsbuildinfo
+.vite/
+
+# misc
+.DS_Store
+*.log
+video/out/
