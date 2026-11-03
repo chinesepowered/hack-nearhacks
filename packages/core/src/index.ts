@@ -4,3 +4,4 @@ export * from "./town";
 export * from "./keeper";
 export * from "./near";
 export * from "./sim";
+export * from "./client";

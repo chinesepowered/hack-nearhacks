@@ -70,7 +70,7 @@ async function main() {
     tusdcWasm.length * 1e-5 + 0.5 + // tusdc code + state
     bazaarWasm.length * 1e-5 + 1.5 + // bazaar code + state
     SEED_STALLS.length * stallFund +
-    3.0 + // guest players and bots (0.1 NEAR each)
+    5.0 + // guest players and bots (0.25 NEAR each)
     0.8; // root keeps a little for gas
   let have = await balanceNear(p, rootId);
   let n = 0;
@@ -106,7 +106,7 @@ async function main() {
   log("4/6", `tx ${txHash(r)}`);
 
   log("5/6", `deploying the bazaar to ${bazaarId}`);
-  const bazaarFund = bazaarWasm.length * 1e-5 + 1.5 + SEED_STALLS.length * stallFund + 3.0;
+  const bazaarFund = bazaarWasm.length * 1e-5 + 1.5 + SEED_STALLS.length * stallFund + 5.0;
   r = await root.signAndSendTransaction({
     receiverId: bazaarId,
     actions: [
