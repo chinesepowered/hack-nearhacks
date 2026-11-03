@@ -223,9 +223,9 @@ export function StallPanel({
           </button>
         )}
 
-        {!s.open && !mine && (
+        {!s.open && (
           <button className="ghost" disabled={bal("coin") < 20 || !!busy} onClick={() => run("invest", () => player.invest(s.stall_id, 20), `Invested 20 coins in ${s.name}`)}>
-            Invest 20🪙 to help it reopen
+            Invest 20🪙 to reopen it
           </button>
         )}
 

@@ -1,18 +1,18 @@
 {
   "network": "testnet",
-  "rpc": "https://rpc.testnet.near.org",
-  "root": "capybazaar-c2ac47.testnet",
-  "bazaar": "bazaar.capybazaar-c2ac47.testnet",
-  "tusdc": "tusdc.capybazaar-c2ac47.testnet",
+  "rpc": "https://test.rpc.fastnear.com",
+  "root": "capybazaar-fdd3ed.testnet",
+  "bazaar": "bazaar.capybazaar-fdd3ed.testnet",
+  "tusdc": "tusdc.capybazaar-fdd3ed.testnet",
   "stallCodeHash": "7zVTUpJ3GmNKsUd2gcj7obU1EqETZMBCYgLkYHnJFhJJ",
-  "houseKey": "ed25519:Ay3VNvTfnajgENhXUHk6v3t3ghQMe4VoZTRsA2H2JtEr",
+  "houseKey": "ed25519:EqsuK3ZLGZ8QStDHHUk1Q9cSofTaqGArNpjsojt44C6r",
   "stalls": [
-    "mochi.bazaar.capybazaar-c2ac47.testnet",
-    "yuzu.bazaar.capybazaar-c2ac47.testnet",
-    "pudding.bazaar.capybazaar-c2ac47.testnet",
-    "kumo.bazaar.capybazaar-c2ac47.testnet",
-    "onsen.bazaar.capybazaar-c2ac47.testnet",
-    "hats.bazaar.capybazaar-c2ac47.testnet"
+    "mochi.bazaar.capybazaar-fdd3ed.testnet",
+    "yuzu.bazaar.capybazaar-fdd3ed.testnet",
+    "pudding.bazaar.capybazaar-fdd3ed.testnet",
+    "kumo.bazaar.capybazaar-fdd3ed.testnet",
+    "onsen.bazaar.capybazaar-fdd3ed.testnet",
+    "hats.bazaar.capybazaar-fdd3ed.testnet"
   ],
-  "createdAt": "2026-11-03T17:38:37.804Z"
+  "createdAt": "2026-11-03T18:34:02.969Z"
 }

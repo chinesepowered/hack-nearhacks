@@ -2,7 +2,8 @@
 
 import { Account, JsonRpcProvider, KeyPair, KeyPairSigner, type KeyPairString } from "near-api-js";
 
-export const DEFAULT_RPC = "https://rpc.testnet.near.org";
+// rpc.testnet.near.org is deprecated and rate-limits (HTTP 429), so default to FastNEAR.
+export const DEFAULT_RPC = "https://test.rpc.fastnear.com";
 
 export interface Deployment {
   network: "testnet";

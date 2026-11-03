@@ -5,7 +5,7 @@ A small market-town game on NEAR testnet where **every stall is an NFT that is i
 Built at NEAR HACKATHON (November 2026). Testnet only; the test USDC has no value.
 
 - **Tracks:** Games With Real Economies (`games`), NFTs That Do Something (`nfts`), AI Swarms (`swarms`), Agent Economy (`agents`)
-- **Shared testnet deployment:** [`deployment.testnet.json`](deployment.testnet.json). The bazaar is `bazaar.capybazaar-c2ac47.testnet`.
+- **Shared testnet deployment:** [`deployment.testnet.json`](deployment.testnet.json). The bazaar is `bazaar.capybazaar-fdd3ed.testnet`.
 - **Demo video:** _link to the X post goes here_
 
 ## The problem
@@ -82,13 +82,13 @@ When you run out of energy, soak at **The Big Soak**. Stalls also repaint their 
 ### Check the shared deployment without running anything
 
 ```bash
-curl -s https://rpc.testnet.near.org -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"query","params":{"request_type":"call_function","finality":"final","account_id":"mochi.bazaar.capybazaar-c2ac47.testnet","method_name":"nft_item_info","args_base64":"e30="}}' | python3 -c 'import sys,json; print(bytes(json.load(sys.stdin)["result"]["result"]).decode())'
+curl -s https://test.rpc.fastnear.com -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"query","params":{"request_type":"call_function","finality":"final","account_id":"mochi.bazaar.capybazaar-fdd3ed.testnet","method_name":"nft_item_info","args_base64":"e30="}}' | python3 -c 'import sys,json; print(bytes(json.load(sys.stdin)["result"]["result"]).decode())'
 ```
 
-**See:** `{"spec":"sharded-item-1.0.0","init":true,"status":"Active","collection_id":"bazaar.capybazaar-c2ac47.testnet","token_id":"mochi.bazaar.capybazaar-c2ac47.testnet",...}`. The stall account describes itself as an item of the bazaar collection.
+**See:** `{"spec":"sharded-item-1.0.0","init":true,"status":"Active","collection_id":"bazaar.capybazaar-fdd3ed.testnet","token_id":"mochi.bazaar.capybazaar-fdd3ed.testnet",...}`. The stall account describes itself as an item of the bazaar collection.
 
 ```bash
-curl -s https://rpc.testnet.near.org -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"query","params":{"request_type":"view_access_key_list","finality":"final","account_id":"mochi.bazaar.capybazaar-c2ac47.testnet"}}'
+curl -s https://test.rpc.fastnear.com -H 'Content-Type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"query","params":{"request_type":"view_access_key_list","finality":"final","account_id":"mochi.bazaar.capybazaar-fdd3ed.testnet"}}'
 ```
 
 **See:** exactly one key, a function-call key limited to `keeper_update` and `keeper_offer` on the stall itself. There is no full-access key on any stall account.
@@ -218,6 +218,7 @@ Other scripts: `pnpm keeper`, `pnpm bots` (`BOTS=4`), `pnpm onboard`, `pnpm meas
   - The house keeper key has no separate gas cap; it spends the stall account's small NEAR float.
   - The keeper runner, bots and onboarding server run locally (no hosted demo).
   - NearBlocks' testnet index is behind (stuck around block 270.4M), so the game shows transactions from the RPC instead of linking to an explorer.
+  - `rpc.testnet.near.org` is deprecated and rate-limits (HTTP 429), so everything defaults to FastNEAR's `https://test.rpc.fastnear.com`. Set `NEAR_RPC` to use another endpoint.
 
 ## License
 

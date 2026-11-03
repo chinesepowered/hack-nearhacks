@@ -93,11 +93,33 @@ async function act(b: TownPlayer, name: string): Promise<void> {
     log(name, `bought a ${hat.hat_id} at ${hatter.name}`);
     return;
   }
+  // Good neighbours: help a closed or struggling stall, and spend coins so they flow back.
   const closed = stalls.find((s) => !s.open && s.ready);
-  if (closed && coins > 80 && Math.random() < 0.2) {
+  if (closed && coins > 40 && Math.random() < 0.5) {
     await b.invest(closed.stall_id, 25);
     log(name, `invested 25 coins to reopen ${closed.name}`);
     return;
+  }
+  const struggling = stalls.filter((s) => s.open && Number(s.coins) < 30).sort((a, c) => Number(a.coins) - Number(c.coins))[0];
+  if (struggling && coins > 60 && Math.random() < 0.3) {
+    await b.invest(struggling.stall_id, 20);
+    log(name, `invested 20 coins in ${struggling.name}`);
+    return;
+  }
+  if (coins > 90 && Math.random() < 0.3) {
+    // A snack: buy a couple of whatever a stall is overstocked on.
+    const pick = stalls
+      .filter((s) => s.open && s.kind === "Grocer")
+      .flatMap((s) => s.quotes.map((q) => ({ s, q, over: Number(q.stock) / Math.max(1, q.target) })))
+      .filter((x) => Number(x.q.stock) >= 2)
+      .sort((a, c) => c.over - a.over)[0];
+    if (pick) {
+      const n = 2;
+      const price = Number(pick.q.ask) * n + 4;
+      await b.buy(pick.s.stall_id, pick.q.token_id, n, price);
+      log(name, `bought ${n} ${pick.q.token_id} from ${pick.s.name} for a snack`);
+      return;
+    }
   }
 
   // Forage whatever pays best right now (with a little randomness).

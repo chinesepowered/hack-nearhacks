@@ -13,7 +13,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { actions, PublicKey } from "near-api-js";
-import { SEED_STALLS, accountWithKey, gas, near, newKeyPair, toNear, type Deployment } from "@capy/core";
+import { DEFAULT_RPC, SEED_STALLS, accountWithKey, gas, near, newKeyPair, toNear, type Deployment } from "@capy/core";
 import {
   DEPLOYMENT_LOCAL,
   DEPLOYMENT_PUBLIC,
@@ -171,7 +171,7 @@ async function main() {
 
   const dep: Deployment = {
     network: "testnet",
-    rpc: process.env.NEAR_RPC ?? "https://rpc.testnet.near.org",
+    rpc: process.env.NEAR_RPC ?? DEFAULT_RPC,
     root: rootId,
     bazaar: bazaarId,
     tusdc: tusdcId,

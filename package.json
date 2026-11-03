@@ -19,7 +19,8 @@
     "test": "pnpm --filter @capy/core test && cargo test --manifest-path contracts/Cargo.toml",
     "typecheck": "pnpm -r typecheck",
     "config-town": "tsx packages/scripts/src/config.ts",
-    "measure": "tsx packages/scripts/src/measure.ts"
+    "measure": "tsx packages/scripts/src/measure.ts",
+    "list-stall": "tsx packages/scripts/src/list-stall.ts"
   },
   "devDependencies": {
     "@types/node": "26.6.6",
