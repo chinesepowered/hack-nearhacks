@@ -1,0 +1,18 @@
+{
+  "network": "testnet",
+  "rpc": "https://rpc.testnet.near.org",
+  "root": "capybazaar-c2ac47.testnet",
+  "bazaar": "bazaar.capybazaar-c2ac47.testnet",
+  "tusdc": "tusdc.capybazaar-c2ac47.testnet",
+  "stallCodeHash": "7zVTUpJ3GmNKsUd2gcj7obU1EqETZMBCYgLkYHnJFhJJ",
+  "houseKey": "ed25519:Ay3VNvTfnajgENhXUHk6v3t3ghQMe4VoZTRsA2H2JtEr",
+  "stalls": [
+    "mochi.bazaar.capybazaar-c2ac47.testnet",
+    "yuzu.bazaar.capybazaar-c2ac47.testnet",
+    "pudding.bazaar.capybazaar-c2ac47.testnet",
+    "kumo.bazaar.capybazaar-c2ac47.testnet",
+    "onsen.bazaar.capybazaar-c2ac47.testnet",
+    "hats.bazaar.capybazaar-c2ac47.testnet"
+  ],
+  "createdAt": "2026-11-03T17:38:37.804Z"
+}
