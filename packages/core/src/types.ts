@@ -40,6 +40,7 @@ export interface Config {
   stall_house_allowance: string;
   tusdc_storage: string;
   max_trade_units: number;
+  caravan_stall_cap_bps: number;
 }
 
 export interface ConfigView {

@@ -5,6 +5,7 @@
 //! as real tUSDC into the stall account, where only the stall's current owner can withdraw it.
 
 use crate::*;
+use capy_types::COIN;
 use near_sdk::json_types::{U128, U64};
 use near_sdk::{Gas, NearToken, Promise, PromiseError, PromiseOrValue};
 
@@ -46,8 +47,9 @@ impl Bazaar {
             )
     }
 
-    /// Buy a hat at a hatter. The hatter uses goods from its stock; 70% (config) of the price
-    /// goes to the stall account as tUSDC, the rest is the game's fee.
+    /// Buy a hat at a hatter. The hatter uses goods from its stock and is paid their reference
+    /// value in coins; 70% (config) of the tUSDC price goes to the stall account as tUSDC, the
+    /// rest is the game's fee.
     pub fn buy_hat(&mut self, stall_id: AccountId, hat_id: String, max_usd: U64) -> Promise {
         let who = env::predecessor_account_id();
         let mut p = self.player(&who);
@@ -63,6 +65,13 @@ impl Bazaar {
             .unwrap_or_else(|| env::panic_str("this hatter doesn't make that hat"));
         require!(price <= max_usd.0, "price moved; try again");
         self.usd_debit(&who, price);
+        // Materials are paid in coins to the hatter, so it can keep buying goods from players.
+        let materials: u128 = hat
+            .recipe
+            .iter()
+            .map(|i| i.qty as u128 * self.good(&i.token_id).map_or(1, |g| g.ref_price as u128))
+            .sum();
+        self.transfer_many(&[(&who, &stall_id, COIN, materials)], "hat materials");
         for ing in &hat.recipe {
             require!(
                 self.bal(&stall_id, &ing.token_id) >= ing.qty as u128,

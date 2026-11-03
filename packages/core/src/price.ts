@@ -43,6 +43,11 @@ export function bidUnit(q: Quote, stock: bigint): number {
   return Math.max(1, Number(m / (SCALE * 10_000n)));
 }
 
+/** Most units of a good a stall will hold (mirror of `shelf_cap`). */
+export function shelfCap(q: Quote): number {
+  return Math.max(q.target * 3, 30);
+}
+
 /** Coins a player receives for selling `units` to a stall holding `stock`. */
 export function sellTotal(q: Quote, stock: bigint, units: number): number {
   let t = 0;

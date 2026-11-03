@@ -2,10 +2,10 @@
 // price curve and keeper rules as the live town. Used by `pnpm sim` and the web "Fast-forward"
 // tab, so judges can watch prices react without waiting a week.
 
-import { bidUnit, askUnit, type Quote } from "./price";
+import { bidUnit, askUnit, shelfCap, type Quote } from "./price";
 import { decide } from "./keeper";
 import { SEED_STALLS, type Traits } from "./town";
-import type { Caravan, Policy, StallView } from "./types";
+import type { Caravan, Fill, OfferIn, Policy, StallView } from "./types";
 
 export interface SimOptions {
   days?: number;
@@ -43,7 +43,7 @@ const GOODS = [
   { id: "melon", ref: 9, min: 1, max: 2, cmin: 3, cmax: 10 },
 ];
 const MIN_FLOAT = 5;
-const SOAK_REF = 8;
+const SOAK_REF = 10;
 
 function rng(seed: number) {
   let s = seed >>> 0 || 1;
@@ -67,6 +67,7 @@ interface SStall {
   soaks: number;
   open: boolean;
   policy: Policy;
+  lastOffers: OfferIn[];
 }
 
 export function simulate(opts: SimOptions = {}): SimResult {
@@ -91,6 +92,7 @@ export function simulate(opts: SimOptions = {}): SimResult {
       window: {},
       soaks: 0,
       open: true,
+      lastOffers: [],
       policy: {
         bounds: [
           ...quotes.map((q) => ({ id: q.token_id, min: Math.max(1, Math.floor(q.base / 2)), max: q.base * 3 })),
@@ -119,10 +121,11 @@ export function simulate(opts: SimOptions = {}): SimResult {
 
   const minutes = days * 24 * 60;
   let caravan: Caravan = { round: 0, opens_ms: 0, closes_ms: 0, demand: [], offers: [], last_fills: [] };
+  let lastFills: Fill[] = [];
   const openCaravan = (minute: number) => {
     const day = Math.floor(minute / 1440);
     caravan = {
-      round: caravan.round + 1, opens_ms: minute, closes_ms: minute + ROUND, offers: [], last_fills: [],
+      round: caravan.round + 1, opens_ms: minute, closes_ms: minute + ROUND, offers: [], last_fills: lastFills,
       demand: GOODS.map((g) => ({
         token_id: g.id,
         qty: Math.round((g.cmin + Math.floor(rand() * (g.cmax - g.cmin + 1))) * (g.id === "melon" && festival.has(day) ? 3 : 1)),
@@ -169,12 +172,21 @@ export function simulate(opts: SimOptions = {}): SimResult {
       if (best.id === "yuzu" && blight.has(day)) qty = Math.max(0, Math.floor(qty / 2));
       b.inv[best.id] += qty;
       b.energy--;
+      // Now and then a well-off bot buys a hat (materials paid in coins to the hatter).
+      if (b.coins > 60 && rand() < 0.02) {
+        const hatter = stalls.find((s) => s.kind === "Hatter" && s.open && (s.stock.yuzu ?? 0) >= 2);
+        if (hatter) {
+          hatter.stock.yuzu -= 2;
+          b.coins -= 10;
+          hatter.coins += 10;
+        }
+      }
       // Sell when holding a few: to the best bid, as many units as that stall can afford.
       for (const g of GOODS) {
         if (b.inv[g.id] < 3) continue;
         const affordable = stalls.filter((s) => {
           const q = s.quotes.find((x) => x.token_id === g.id);
-          return s.open && q && s.coins >= bidUnit(q, BigInt((s.stock[g.id] ?? 0) + 1));
+          return s.open && q && (s.stock[g.id] ?? 0) < shelfCap(q) && s.coins >= bidUnit(q, BigInt((s.stock[g.id] ?? 0) + 1));
         });
         if (!affordable.length) continue;
         const bidOf = (s: SStall) => bidUnit(s.quotes.find((x) => x.token_id === g.id)!, BigInt((s.stock[g.id] ?? 0) + 1));
@@ -185,7 +197,7 @@ export function simulate(opts: SimOptions = {}): SimResult {
         const q = bestStall.quotes.find((x) => x.token_id === g.id)!;
         let total = 0;
         let units = 0;
-        while (units < b.inv[g.id]) {
+        while (units < b.inv[g.id] && (bestStall.stock[g.id] ?? 0) + units < shelfCap(q)) {
           const next = bidUnit(q, BigInt((bestStall.stock[g.id] ?? 0) + units + 1));
           if (total + next > bestStall.coins) break;
           total += next;
@@ -207,12 +219,13 @@ export function simulate(opts: SimOptions = {}): SimResult {
       const views = stalls.map(toView);
       for (const s of stalls) {
         if (!s.open) continue;
-        const out = decide({ stall: toView(s), policy: s.policy, traits: s.traits, market: views, caravan: { ...caravan, closes_ms: Number.MAX_SAFE_INTEGER }, goods: [], hats: [], minFloat: MIN_FLOAT, memory: { soaks: s.soaks, hats: 0 } });
+        const out = decide({ stall: toView(s), policy: s.policy, traits: s.traits, market: views, caravan: { ...caravan, closes_ms: Number.MAX_SAFE_INTEGER }, goods: [], hats: [], minFloat: MIN_FLOAT, memory: { soaks: s.soaks, hats: 0 }, lastOffers: s.lastOffers });
         s.quotes = out.decision.quotes;
         if (out.decision.soak_price !== undefined) s.soak = out.decision.soak_price;
         s.window = {};
         for (const o of out.offers) {
           if ((s.stock[o.token_id] ?? 0) < o.qty || caravan.offers.some((x) => x.stall_id === s.id && x.token_id === o.token_id)) continue;
+          s.lastOffers = [...s.lastOffers.filter((x) => x.token_id !== o.token_id), o];
           s.stock[o.token_id] -= o.qty;
           caravan.offers.push({ stall_id: s.id, token_id: o.token_id, qty: o.qty, min_price: o.min_price, ms: m });
         }
@@ -221,14 +234,17 @@ export function simulate(opts: SimOptions = {}): SimResult {
 
     // Caravan settles every 3 minutes, with rent.
     if (m >= caravan.closes_ms) {
+      lastFills = [];
       for (const d of caravan.demand) {
         const offers = caravan.offers.filter((o) => o.token_id === d.token_id).sort((a, b) => a.min_price - b.min_price || a.ms - b.ms);
         let remaining = d.qty;
         const accepted: { o: (typeof offers)[0]; take: number }[] = [];
         let clearing = 0;
+        const cap = Math.max(1, Math.ceil(d.qty * 0.4));
         for (const o of offers) {
           if (remaining === 0 || o.min_price > d.max_price) break;
-          const take = Math.min(o.qty, remaining);
+          const take = Math.min(o.qty, remaining, cap);
+          if (take === 0) continue;
           remaining -= take;
           o.qty -= take;
           clearing = o.min_price;
@@ -239,6 +255,7 @@ export function simulate(opts: SimOptions = {}): SimResult {
           s.coins += take * clearing;
           coinsInCirculation += take * clearing;
           summary.caravanUnits += take;
+          lastFills.push({ stall_id: s.id, token_id: d.token_id, qty: take, price: clearing });
         }
       }
       for (const o of caravan.offers) if (o.qty > 0) stalls.find((x) => x.id === o.stall_id)!.stock[o.token_id] += o.qty;
@@ -264,6 +281,7 @@ export function simulate(opts: SimOptions = {}): SimResult {
           events.push({ hour: m / 60, text: `A player invested 40 coins and reopened ${s.id}` });
         }
       }
+      for (const s of stalls) s.lastOffers = s.lastOffers.filter(() => false);
       openCaravan(m);
     }
 

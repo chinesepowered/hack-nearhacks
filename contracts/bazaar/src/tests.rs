@@ -192,8 +192,9 @@ fn soak_refills_energy_uses_yuzu_and_burns_upkeep() {
     ctx(ALICE, 20_000);
     assert_eq!(b.soak(acc(SOAK), U64(100)), 8);
     assert_eq!(b.mt_balance_of(acc(SOAK), "yuzu".into()), U128(4));
-    // 8 coins: 0 burned at 10% (floor), 8 to the bathhouse.
-    assert_eq!(b.mt_supply(COIN.into()).unwrap().0, supply_before);
+    // 10 coins: 1 burned as spring upkeep (10%), 9 to the bathhouse.
+    assert_eq!(b.mt_supply(COIN.into()).unwrap().0, supply_before - 1);
+    assert_eq!(b.mt_balance_of(acc(SOAK), COIN.into()), U128(109));
     assert_eq!(b.get_player(acc(ALICE)).unwrap().energy, 8);
 }
 
@@ -245,6 +246,8 @@ fn hats_are_paid_in_tusdc_and_split_with_the_stall() {
     assert_eq!(a.hat.as_deref(), Some("hat-yuzu"));
     assert_eq!(b.mt_balance_of(acc(ALICE), "hat-yuzu".into()), U128(1));
     assert_eq!(b.mt_balance_of(acc(HATS), "yuzu".into()), U128(2)); // recipe used 2 yuzu
+    assert_eq!(b.mt_balance_of(acc(ALICE), COIN.into()), U128(15 - 10)); // 2 yuzu x 5 coins materials
+    assert_eq!(b.mt_balance_of(acc(HATS), COIN.into()), U128(110));
     assert_eq!(b.get_stats().treasury_usd, U64(300_000));
     assert_eq!(b.get_stall(acc(HATS)).unwrap().stats.usd_earned, 700_000);
 }
@@ -347,25 +350,32 @@ fn only_index_owner_can_forward_owner_actions() {
 }
 
 #[test]
-fn caravan_clears_at_a_uniform_price_and_mints_coins() {
+fn caravan_clears_at_a_uniform_price_and_shares_demand() {
     let mut b = town();
     let demand = b.get_caravan().demand;
     let yuzu = demand.iter().find(|d| d.token_id == "yuzu").unwrap().clone();
+    let cap = (yuzu.qty * 4_000).div_ceil(10_000);
     ctx(MOCHI, 5_000);
     b.stall_offer(vec![OfferIn { token_id: "yuzu".into(), qty: yuzu.qty, min_price: 1 }]);
     ctx(SOAK, 5_100);
     b.stall_offer(vec![OfferIn { token_id: "yuzu".into(), qty: 2, min_price: 2 }]);
     assert_eq!(b.mt_balance_of(acc(MOCHI), "yuzu".into()), U128(20 - yuzu.qty as u128));
     let coins_before = b.mt_balance_of(acc(MOCHI), COIN.into()).0;
-    ctx(ALICE, 1_000 + 180_000);
+    let soak_before = b.mt_balance_of(acc(SOAK), COIN.into()).0;
+    ctx(ALICE, 1_000 + 300_000);
     let fills = b.settle_caravan();
-    // Mochi's cheaper offer fills the whole demand, so the bathhouse's stock comes back.
-    let f = fills.iter().find(|f| f.token_id == "yuzu").unwrap();
-    assert_eq!(f.stall_id, acc(MOCHI));
-    assert_eq!(f.qty, yuzu.qty);
-    assert_eq!(b.mt_balance_of(acc(SOAK), "yuzu".into()), U128(5));
-    // Paid qty * clearing price, minus 2 coins rent.
-    assert_eq!(b.mt_balance_of(acc(MOCHI), COIN.into()).0, coins_before + yuzu.qty as u128 - 2);
+    let m = fills.iter().find(|f| f.token_id == "yuzu" && f.stall_id == acc(MOCHI)).unwrap();
+    let s = fills.iter().find(|f| f.token_id == "yuzu" && f.stall_id == acc(SOAK)).unwrap();
+    // Mochi is cheapest but capped at 40% of the round; the bathhouse fills next.
+    assert_eq!(m.qty, cap);
+    assert_eq!(s.qty, 2);
+    // Uniform price: both paid the highest accepted offer (2 coins).
+    assert_eq!(m.price, 2);
+    assert_eq!(s.price, 2);
+    // Unsold stock returns to Mochi; rent is off by default.
+    assert_eq!(b.mt_balance_of(acc(MOCHI), "yuzu".into()), U128(20 - cap as u128));
+    assert_eq!(b.mt_balance_of(acc(MOCHI), COIN.into()).0, coins_before + 2 * cap as u128);
+    assert_eq!(b.mt_balance_of(acc(SOAK), COIN.into()).0, soak_before + 4);
     assert_eq!(b.get_caravan().round, 2);
 }
 
@@ -395,4 +405,28 @@ fn hat_prices_only_for_hatters() {
     b.stall_set_quotes(vec![], None, Some(vec![HatPrice { hat_id: "hat-duck".into(), price_usd: U64(2_500_000) }]), "".into());
     let h = b.get_stall(acc(HATS)).unwrap();
     assert_eq!(h.hats.iter().find(|x| x.hat_id == "hat-duck").unwrap().price_usd, U64(2_500_000));
+}
+
+#[test]
+#[should_panic(expected = "shelves are full")]
+fn stalls_stop_buying_when_shelves_are_full() {
+    let mut b = town();
+    // Mochi holds 20 grass with target 20, so its shelf holds 60.
+    ctx(ALICE, 10_000);
+    b.mint(&acc(ALICE), "grass", 50, "test");
+    b.sell(acc(MOCHI), "grass".into(), 30, U64(0));
+    b.sell(acc(MOCHI), "grass".into(), 11, U64(0));
+}
+
+#[test]
+fn rent_burns_coins_when_switched_on() {
+    let mut b = town();
+    let mut cfg = b.get_config().config;
+    cfg.stall_rent = 3;
+    ctx(BAZAAR, 2_000);
+    b.set_config(cfg);
+    let before = b.mt_balance_of(acc(MOCHI), COIN.into()).0;
+    ctx(ALICE, 1_000 + 300_000);
+    b.settle_caravan();
+    assert_eq!(b.mt_balance_of(acc(MOCHI), COIN.into()).0, before - 3);
 }

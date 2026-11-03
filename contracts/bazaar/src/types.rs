@@ -67,6 +67,8 @@ pub struct Config {
     pub stall_house_allowance: U128,
     pub tusdc_storage: U128,
     pub max_trade_units: u32,
+    /// Most of one round's demand for a good that a single stall may fill.
+    pub caravan_stall_cap_bps: u16,
 }
 
 impl Default for Config {
@@ -76,12 +78,12 @@ impl Default for Config {
             energy_regen_ms: U64(90_000),
             forage_cooldown_ms: U64(4_000),
             start_coins: 15,
-            soak_ref_price: 8,
+            soak_ref_price: 10,
             soak_burn_bps: 1_000,
             soak_yuzu: 1,
             stall_min_float: 5,
-            stall_rent: 2,
-            caravan_round_ms: U64(180_000),
+            stall_rent: 0,
+            caravan_round_ms: U64(300_000),
             hat_stall_share_bps: 7_000,
             stall_sale_fee_bps: 500,
             player_funding: U128(100_000_000_000_000_000_000_000), // 0.1 NEAR of gas
@@ -89,6 +91,7 @@ impl Default for Config {
             stall_house_allowance: U128(0),                        // no separate cap
             tusdc_storage: U128(1_250_000_000_000_000_000_000),         // 0.00125 NEAR
             max_trade_units: 30,
+            caravan_stall_cap_bps: 4_000,
         }
     }
 }

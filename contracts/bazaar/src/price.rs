@@ -42,6 +42,11 @@ pub fn bid_unit(q: &Quote, stock: u128) -> u64 {
     ((m / (SCALE * 10_000)) as u64).max(1)
 }
 
+/// Most units of a good a stall will hold. Stops a keeper buying stock it can never sell.
+pub fn shelf_cap(q: &Quote) -> u128 {
+    (q.target as u128 * 3).max(30)
+}
+
 /// Coins a player receives for selling `units` to a stall holding `stock`.
 pub fn sell_total(q: &Quote, stock: u128, units: u32) -> u64 {
     (1..=units as u128).map(|i| bid_unit(q, stock + i)).sum()

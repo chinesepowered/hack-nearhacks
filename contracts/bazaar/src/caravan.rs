@@ -2,8 +2,9 @@
 //!
 //! Each round a caravan arrives wanting some quantity of each good, up to a maximum price.
 //! Keepers offer stock (escrowed when offered). At the end of the round anyone may settle it:
-//! for each good, offers are filled cheapest first and every filled unit is paid the same
-//! clearing price (the highest accepted offer). Coins paid by the caravan are minted, which is
+//! for each good, offers are filled cheapest first (no stall may supply more than
+//! `caravan_stall_cap_bps` of the round) and every filled unit is paid the same clearing price
+//! (the highest accepted offer). Coins paid by the caravan are minted, which is
 //! how new coins enter the town; rent is burned from every stall each round.
 
 use crate::*;
@@ -61,11 +62,16 @@ impl Bazaar {
             let mut remaining = d.qty;
             let mut accepted: Vec<(AccountId, u32)> = vec![];
             let mut clearing = 0u32;
+            // The caravan likes variety: no single stall supplies more than a share of the round.
+            let cap = ((d.qty as u64 * self.config.caravan_stall_cap_bps as u64).div_ceil(10_000) as u32).max(1);
             for o in offers.iter_mut().filter(|o| o.token_id == d.token_id) {
                 if remaining == 0 || o.min_price > d.max_price {
                     break;
                 }
-                let take = o.qty.min(remaining);
+                let take = o.qty.min(remaining).min(cap);
+                if take == 0 {
+                    continue;
+                }
                 remaining -= take;
                 o.qty -= take;
                 clearing = o.min_price;

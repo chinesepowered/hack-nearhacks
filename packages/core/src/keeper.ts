@@ -29,6 +29,8 @@ export interface KeeperInput {
   hats: HatInfo[];
   minFloat: number;
   memory?: KeeperMemory;
+  /** What this keeper offered the caravan last round (runner memory). */
+  lastOffers?: OfferIn[];
 }
 
 export interface KeeperOutput {
@@ -88,6 +90,11 @@ export function decide(input: KeeperInput): KeeperOutput {
     if (pressure >= 3) delta += traits.step;
     if (pressure <= -5) delta -= traits.step;
     if (poor) delta -= traits.step * 2; // stop buying so much when the till is nearly empty
+    // Learn from the last caravan round: unsold surplus means bids are too high.
+    const offeredLast = (input.lastOffers ?? []).some((o) => o.token_id === q.token_id);
+    const filledLast = caravan.last_fills.some((f) => f.stall_id === stall.stall_id && f.token_id === q.token_id);
+    if (offeredLast && !filledLast && stock > target) delta -= traits.step;
+    if (filledLast && stock < target) delta += traits.step;
     const export_ = caravan.demand.find((d) => d.token_id === q.token_id);
     if (export_ && stock > target && export_.max_price < Math.ceil(q.base * traits.offerMarkup)) delta -= traits.step;
     base += delta;

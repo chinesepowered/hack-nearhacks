@@ -122,6 +122,10 @@ impl Bazaar {
             .cloned()
             .unwrap_or_else(|| env::panic_str("this stall does not buy that"));
         let stock = self.bal(&stall_id, &token_id);
+        require!(
+            stock + amount as u128 <= crate::price::shelf_cap(&q),
+            "this stall's shelves are full of that; try another stall"
+        );
         let total = sell_total(&q, stock, amount);
         require!(total >= min_coins.0, "price moved; try again");
         require!(
