@@ -165,7 +165,7 @@ async function main() {
   const s = stats.stats;
   show(
     "Town totals (all on testnet)",
-    `${s.players} players, ${s.stalls} stall accounts, ${s.actions} on-chain actions, ${s.hats} hats, ${s.stall_sales} stall sales, ${usd(s.usd_volume)} test-USDC volume`,
+    `${s.players} players, ${s.stalls} stall accounts, ${s.actions} on-chain actions, ${s.hats} hat${s.hats === 1 ? "" : "s"}, ${s.stall_sales} stall sale${s.stall_sales === 1 ? "" : "s"}, ${usd(s.usd_volume)} test-USDC volume`,
     true,
   );
 

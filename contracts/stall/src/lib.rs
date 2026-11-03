@@ -538,6 +538,18 @@ mod tests {
     }
 
     #[test]
+    #[should_panic(expected = "not an active keeper")]
+    fn listed_stall_refuses_owner_agents() {
+        let mut s = stall();
+        ctx("bazaar.testnet", house());
+        s.owner_action(Some(acc("town.testnet")), OwnerAction::AddKeeperKey { public_key: other_key() });
+        s.owner_action(Some(acc("town.testnet")), OwnerAction::List { price_usd: U64(1) });
+        // The seller's own agent tries to dump stock while the stall is listed.
+        ctx("mochi.bazaar.testnet", other_key());
+        s.keeper_update(q(3), None, None, "everything must go".into());
+    }
+
+    #[test]
     #[should_panic(expected = "must not name itself")]
     fn refuses_self_as_collection() {
         ctx("mochi.bazaar.testnet", house());
