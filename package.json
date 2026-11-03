@@ -10,7 +10,7 @@
     "build:contracts": "bash contracts/build.sh",
     "town": "tsx packages/scripts/src/setup.ts",
     "dev": "concurrently -k -n onboard,keeper,bots,web -c yellow,cyan,magenta,green \"pnpm onboard\" \"pnpm keeper\" \"pnpm bots\" \"pnpm web\"",
-    "onboard": "tsx packages/scripts/src/server.ts",
+    "onboard": "tsx packages/scripts/src/onboard.ts",
     "keeper": "tsx packages/scripts/src/keeper.ts",
     "bots": "tsx packages/scripts/src/bots.ts",
     "web": "pnpm --filter @capy/web dev",

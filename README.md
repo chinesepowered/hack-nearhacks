@@ -205,7 +205,14 @@ This runs 45 Rust unit tests (contracts) and the TypeScript price tests. To rebu
 pnpm build:contracts
 ```
 
-Other scripts: `pnpm keeper`, `pnpm bots` (`BOTS=4`), `pnpm onboard`, `pnpm measure`, `pnpm config-town key=value`.
+Other scripts:
+
+- `pnpm keeper`, `pnpm bots` (`BOTS=4`) and `pnpm onboard` run the pieces of `pnpm dev` separately.
+- `pnpm sim [days] [townsfolk]` fast-forwards the economy in the terminal.
+- `pnpm measure` measures gas per action.
+- `pnpm list-stall <slug> <usd>` makes the town list one of its stalls.
+- `pnpm config-town key=value` changes the bazaar's config.
+- `node video/record.mjs` records the captioned demo video while `pnpm dev` runs; `node video/narrate.mjs` adds an ElevenLabs voiceover (`ELEVENLABS_API_KEY`).
 
 ## Disclosures
 
