@@ -85,18 +85,20 @@ export function decide(input: KeeperInput): KeeperOutput {
     const pressure = w.sold - w.bought;
     let base = q.base;
     let delta = 0;
-    if (stock > target * 1.5) delta -= traits.step;
-    if (stock < target * 0.5) delta += traits.step;
+    const ref = goods.find((g) => g.id === q.token_id)?.ref_price ?? q.base;
+    if (stock > target * 2) delta -= traits.step;
+    else if (stock < target) delta += traits.step;
+    else if (q.base < ref) delta += traits.step; // healthy shelf: drift back to the usual price
     if (pressure >= 3) delta += traits.step;
     if (pressure <= -5) delta -= traits.step;
     if (poor) delta -= traits.step * 2; // stop buying so much when the till is nearly empty
     // Learn from the last caravan round: unsold surplus means bids are too high.
     const offeredLast = (input.lastOffers ?? []).some((o) => o.token_id === q.token_id);
     const filledLast = caravan.last_fills.some((f) => f.stall_id === stall.stall_id && f.token_id === q.token_id);
-    if (offeredLast && !filledLast && stock > target) delta -= traits.step;
+    if (offeredLast && !filledLast && stock > target * 1.5) delta -= traits.step;
     if (filledLast && stock < target) delta += traits.step;
     const export_ = caravan.demand.find((d) => d.token_id === q.token_id);
-    if (export_ && stock > target && export_.max_price < Math.ceil(q.base * traits.offerMarkup)) delta -= traits.step;
+    if (export_ && stock > target * 1.5 && export_.max_price < Math.ceil(q.base * traits.offerMarkup)) delta -= traits.step;
     base += delta;
     const rivals = market.filter((m) => m.stall_id !== stall.stall_id && m.open);
     const rivalBases = rivals.flatMap((m) => m.quotes.filter((x) => x.token_id === q.token_id).map((x) => x.base));
@@ -199,22 +201,21 @@ export function decide(input: KeeperInput): KeeperOutput {
 
   reasons.sort((a, b) => b.weight - a.weight);
   const note = reasons[0]?.text ?? steadyNote(traits);
-  void goods;
   return { decision: { quotes, soak_price, hat_prices, note }, offers, memory: mem, changed };
 }
 
 function voiceDown(t: Traits, name: string, stock: number, base: number, followed: boolean): string {
   switch (t.voice) {
     case "cheerful":
-      return `So much ${name} today (${stock} on the shelf)! Dropping it to ${base} coins, tell your friends!`;
+      return `So much ${name} today (${stock} on the shelf)! Dropping it to ${coinsText(base)}, tell your friends!`;
     case "grumpy":
       return `Fine. FINE. ${cap(name)} down to ${base}. Don't get used to it.`;
     case "follower":
-      return followed ? `Everyone else is cheaper on ${name}, so I am too: ${base} coins.` : `${cap(name)} down to ${base}, I think?`;
+      return followed ? `Everyone else is cheaper on ${name}, so I am too: ${coinsText(base)}.` : `${cap(name)} down to ${base}, I think?`;
     case "hoarder":
-      return `The barn is full of ${name}. ${base} coins, take as much as you like.`;
+      return `The barn is full of ${name}. ${coinsText(base)}, take as much as you like.`;
     default:
-      return `${cap(name)} down to ${base} coins: we have plenty (${stock}).`;
+      return `${cap(name)} down to ${coinsText(base)}: we have plenty (${stock}).`;
   }
 }
 
@@ -222,15 +223,15 @@ function voiceUp(t: Traits, name: string, stock: number, base: number, pressure:
   const why = stock < 5 ? `only ${stock} left` : pressure >= 3 ? `everyone wants it` : `stock is low`;
   switch (t.voice) {
     case "cheerful":
-      return `Ooh, ${name} is popular (${why})! ${base} coins now.`;
+      return `Ooh, ${name} is popular (${why})! ${coinsText(base)} now.`;
     case "grumpy":
       return `Hmph. ${cap(name)}: ${why}. Price goes UP to ${base}.`;
     case "follower":
-      return `The others raised ${name}, so... ${base} coins.`;
+      return `The others raised ${name}, so... ${coinsText(base)}.`;
     case "hoarder":
-      return `${cap(name)} is getting scarce (${why}). ${base} coins and not a coin less.`;
+      return `${cap(name)} is getting scarce (${why}). ${coinsText(base)} and not a coin less.`;
     default:
-      return `${cap(name)} up to ${base} coins: ${why}.`;
+      return `${cap(name)} up to ${coinsText(base)}: ${why}.`;
   }
 }
 
@@ -263,3 +264,4 @@ function steadyNote(t: Traits): string {
 }
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+const coinsText = (n: number) => (n === 1 ? "1 coin" : `${n} coins`);

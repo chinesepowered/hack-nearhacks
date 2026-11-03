@@ -43,6 +43,7 @@ const GOODS = [
   { id: "melon", ref: 9, min: 1, max: 2, cmin: 3, cmax: 10 },
 ];
 const MIN_FLOAT = 5;
+const GOOD_INFO = GOODS.map((g) => ({ id: g.id, name: g.id, ref_price: g.ref, spot: "", forage_min: g.min, forage_max: g.max, caravan_min_qty: g.cmin, caravan_max_qty: g.cmax }));
 const SOAK_REF = 10;
 
 function rng(seed: number) {
@@ -78,7 +79,7 @@ export function simulate(opts: SimOptions = {}): SimResult {
   const blight = new Set(opts.blightDays ?? [5]);
   const ROUND = opts.roundMinutes ?? 5;
   const RENT = opts.rent ?? 0;
-  const activity = opts.activity ?? 0.5;
+  const activity = opts.activity ?? 0.3;
   const stalls: SStall[] = SEED_STALLS.map((s) => {
     const quotes = s.goods.map((g) => ({ token_id: g, base: GOODS.find((x) => x.id === g)!.ref, spread_bps: 800, target: 20 }));
     return {
@@ -219,7 +220,7 @@ export function simulate(opts: SimOptions = {}): SimResult {
       const views = stalls.map(toView);
       for (const s of stalls) {
         if (!s.open) continue;
-        const out = decide({ stall: toView(s), policy: s.policy, traits: s.traits, market: views, caravan: { ...caravan, closes_ms: Number.MAX_SAFE_INTEGER }, goods: [], hats: [], minFloat: MIN_FLOAT, memory: { soaks: s.soaks, hats: 0 }, lastOffers: s.lastOffers });
+        const out = decide({ stall: toView(s), policy: s.policy, traits: s.traits, market: views, caravan: { ...caravan, closes_ms: Number.MAX_SAFE_INTEGER }, goods: GOOD_INFO, hats: [], minFloat: MIN_FLOAT, memory: { soaks: s.soaks, hats: 0 }, lastOffers: s.lastOffers });
         s.quotes = out.decision.quotes;
         if (out.decision.soak_price !== undefined) s.soak = out.decision.soak_price;
         s.window = {};

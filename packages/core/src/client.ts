@@ -3,7 +3,7 @@
 
 import type { Account, JsonRpcProvider } from "near-api-js";
 import { gas, view, type Deployment } from "./near";
-import type { Caravan, ConfigView, FeedItem, PlayerView, StallState, StallView, StatsView } from "./types";
+import type { Caravan, ConfigView, FeedItem, NftItemInfo, PlayerView, StallState, StallView, StatsView } from "./types";
 
 export class TownReader {
   constructor(public provider: JsonRpcProvider, public dep: Deployment) {}
@@ -12,6 +12,7 @@ export class TownReader {
   stalls = () => view<StallView[]>(this.provider, this.dep.bazaar, "get_stalls");
   stall = (stall_id: string) => view<StallView | null>(this.provider, this.dep.bazaar, "get_stall", { stall_id });
   stallState = (stall_id: string) => view<StallState>(this.provider, stall_id, "get_state");
+  itemInfo = (stall_id: string) => view<NftItemInfo>(this.provider, stall_id, "nft_item_info");
   player = (account_id: string) => view<PlayerView | null>(this.provider, this.dep.bazaar, "get_player", { account_id });
   players = () => view<PlayerView[]>(this.provider, this.dep.bazaar, "get_players", { limit: 50 });
   caravan = () => view<Caravan>(this.provider, this.dep.bazaar, "get_caravan");
@@ -21,7 +22,30 @@ export class TownReader {
     view<string>(this.provider, this.dep.tusdc, "ft_balance_of", { account_id });
 }
 
+export interface TxRecord {
+  hash: string;
+  method: string;
+  ms: number;
+}
+
+function decodeSuccess(status: unknown): unknown {
+  const sv = (status as { SuccessValue?: string } | undefined)?.SuccessValue;
+  if (!sv) return undefined;
+  const bin = atob(sv);
+  const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+  const text = new TextDecoder().decode(bytes);
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+}
+
 export class TownPlayer extends TownReader {
+  /** Every transaction this player signed, newest last. */
+  txs: TxRecord[] = [];
+  onTx?: (tx: TxRecord) => void;
+
   constructor(provider: JsonRpcProvider, dep: Deployment, public account: Account) {
     super(provider, dep);
   }
@@ -32,14 +56,18 @@ export class TownPlayer extends TownReader {
 
   // Prepaid gas is checked against the balance at a pessimistic price (~10x) before refunds,
   // so keep it close to what each call really needs.
-  private call<T>(methodName: string, args: Record<string, unknown>, tgas = 20): Promise<T> {
-    return this.account.callFunction<T & object>({
+  private async call<T>(methodName: string, args: Record<string, unknown>, tgas = 20): Promise<T> {
+    const r = await this.account.callFunctionRaw({
       contractId: this.dep.bazaar,
       methodName,
       args,
       gas: gas(tgas),
       deposit: 0n,
-    }) as Promise<T>;
+    });
+    const rec = { hash: r.transaction.hash, method: methodName, ms: Date.now() };
+    this.txs.push(rec);
+    this.onTx?.(rec);
+    return decodeSuccess(r.status) as T;
   }
 
   forage = (spot: string) => this.call<{ token_id: string; qty: number; energy: number }>("forage", { spot });
