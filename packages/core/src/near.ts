@@ -30,7 +30,8 @@ export async function view<T>(
   method: string,
   args: Record<string, unknown> = {},
 ): Promise<T> {
-  return (await provider.callFunction({ contractId, method, args })) as T;
+  // "optimistic" so a read right after a transaction sees its effects ("final" lags 1-2 blocks).
+  return (await provider.callFunction({ contractId, method, args, blockQuery: { finality: "optimistic" } })) as T;
 }
 
 export function accountWithKey(provider: JsonRpcProvider, accountId: string, privateKey: string): Account {

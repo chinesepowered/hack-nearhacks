@@ -39,6 +39,9 @@ export function hasKey(name: string): boolean {
 export function loadDeployment(): Deployment {
   const f = fs.existsSync(DEPLOYMENT_LOCAL) ? DEPLOYMENT_LOCAL : DEPLOYMENT_PUBLIC;
   if (!fs.existsSync(f)) throw new Error("no deployment found: run `pnpm town`");
+  if (f === DEPLOYMENT_PUBLIC && fs.existsSync(path.join(KEYS_DIR, "root.json"))) {
+    console.warn("[town] no deployment.local.json yet; using the shared town (read-only). If `pnpm town` was interrupted, run it again.");
+  }
   return JSON.parse(fs.readFileSync(f, "utf8"));
 }
 
@@ -48,6 +51,13 @@ export function provider(): JsonRpcProvider {
 
 export function rootAccount(p: JsonRpcProvider = provider()): Account {
   const k = loadKey("root");
+  const dep = loadDeployment();
+  if (k.account_id !== dep.root) {
+    throw new Error(
+      `.keys/root.json is the admin of ${k.account_id}, but the town in use is ${dep.root}. ` +
+        "Run `pnpm town` to build your own town (it writes deployment.local.json).",
+    );
+  }
   return accountWithKey(p, k.account_id, k.private_key);
 }
 

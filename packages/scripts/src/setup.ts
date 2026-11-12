@@ -13,7 +13,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { actions, PublicKey } from "near-api-js";
-import { DEFAULT_RPC, SEED_STALLS, accountWithKey, gas, near, newKeyPair, toNear, type Deployment } from "@capy/core";
+import { DEFAULT_RPC, SEED_STALLS, accountWithKey, gas, near, newKeyPair, toNear, view, type Deployment } from "@capy/core";
 import {
   DEPLOYMENT_LOCAL,
   DEPLOYMENT_PUBLIC,
@@ -25,6 +25,7 @@ import {
   randomId,
   saveKey,
   sha256Base58,
+  sleep,
   txHash,
 } from "./lib";
 
@@ -154,8 +155,14 @@ async function main() {
       deposit: near(String(stallFund)),
       gas: gas(200),
     });
-    const ok = await p.callFunction({ contractId: bazaarId, method: "get_stall", args: { stall_id: stallId } });
-    if (!ok || !(ok as { ready: boolean }).ready) throw new Error(`stall ${stallId} did not open`);
+    // The account is created in follow-up receipts; give them a few seconds to land.
+    let ready = false;
+    for (let i = 0; i < 20 && !ready; i++) {
+      const v = await view<{ ready: boolean } | null>(p, bazaarId, "get_stall", { stall_id: stallId });
+      ready = !!v?.ready;
+      if (!ready) await sleep(1_000);
+    }
+    if (!ready) throw new Error(`stall ${stallId} did not open; run \`pnpm town\` again`);
     stalls.push(stallId);
     log("6/6", `  ${s.name} -> ${stallId}`);
     if (s.listUsd) {
