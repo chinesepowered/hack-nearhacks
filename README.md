@@ -6,7 +6,7 @@ Built at NEAR HACKATHON (November 2026). Testnet only; the test USDC has no valu
 
 - **Tracks:** Games With Real Economies (`games`), NFTs That Do Something (`nfts`), AI Swarms (`swarms`), Agent Economy (`agents`)
 - **Shared testnet deployment:** [`deployment.testnet.json`](deployment.testnet.json). The bazaar is `bazaar.capybazaar-fdd3ed.testnet`.
-- **Demo video:** _link to the X post goes here_
+- **Demo video:** [X post with the video](https://x.com/ChinesePowered/status/2120694803197464802)
 
 ## The problem
 
