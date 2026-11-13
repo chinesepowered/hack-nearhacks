@@ -227,6 +227,10 @@ Other scripts:
   - NearBlocks' testnet index is behind (stuck around block 270.4M), so the game shows transactions from the RPC instead of linking to an explorer.
   - `rpc.testnet.near.org` is deprecated and rate-limits (HTTP 429), so everything defaults to FastNEAR's `https://test.rpc.fastnear.com`. Set `NEAR_RPC` to use another endpoint.
 
+## Other submission by the same author
+
+**[Arf](https://github.com/chinesepowered/hack-nearhacks2)** is a separate, independent project: a memecoin on NEAR testnet where the supply only comes out of a contract-owned pantry when people look after one shared on-chain seal pup, with an AI judge on NEAR AI Cloud whose signature the contract checks (tracks `memecoins`, `privacy`, `social`, `games`, `open`). Capybazaar and Arf share no code, contracts or deployments.
+
 ## License
 
 [MIT](LICENSE)
